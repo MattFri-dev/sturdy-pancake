@@ -29,19 +29,31 @@
 
     fetch("https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/WMTSCapabilities.xml")
       .then(response => response.text())
-      .then(str => (new window.DOMParser()).parseFromString(str, "text/xml"))
-      .then(data => {
-        const layers = data.querySelectorAll("Layer");
+      .then(xmlText => {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlText, "application/xml");
+
+        const nsResolver = function(prefix) {
+          const ns = {
+            "ows": "http://www.opengis.net/ows/1.1",
+            "wmts": "http://www.opengis.net/wmts/1.0"
+          };
+          return ns[prefix] || null;
+        };
+
+        const layers = xmlDoc.evaluate("//wmts:Layer", xmlDoc, nsResolver, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
         let output = "";
 
-        layers.forEach(layer => {
-          const identifier = layer.querySelector("ows\\:Identifier, Identifier");
-          const dimension = layer.querySelector("Dimension[name='Time']");
-          if (identifier && dimension && layerNames[identifier.textContent]) {
+        for (let i = 0; i < layers.snapshotLength; i++) {
+          const layer = layers.snapshotItem(i);
+          const identifier = xmlDoc.evaluate("ows:Identifier", layer, nsResolver, XPathResult.STRING_TYPE, null).stringValue;
+          const dimension = xmlDoc.evaluate("wmts:Dimension[@name='Time']", layer, nsResolver, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+
+          if (layerNames[identifier] && dimension) {
             const defaultDate = dimension.getAttribute("default");
-            output += `<div class="layer-date"><strong>${layerNames[identifier.textContent]}</strong>: ${defaultDate}</div>`;
+            output += `<div class="layer-date"><strong>${layerNames[identifier]}</strong>: ${defaultDate}</div>`;
           }
-        });
+        }
 
         document.getElementById("results").innerHTML = output || "No matching layers found.";
       })
