@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>GIBS GHRSST Layer Dates</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f0f8ff;
+    }
+    h2 {
+      color: #003366;
+    }
+    .layer-date {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Latest Imagery Dates from GIBS (GHRSST Layers)</h2>
+  <div id="results">Loading...</div>
+
+  <script>
+    const layerNames = {
+      "GHRSST_L4_MUR_Sea_Ice_Concentration": "Sea Ice Concentration (L4, MUR, GHRSST)",
+      "GHRSST_L4_MUR_Sea_Surface_Temperature": "Sea Surface Temperature (L4, MUR Global Foundation, GHRSST)",
+      "GHRSST_L4_MUR_Sea_Surface_Temperature_Anomaly": "Sea Surface Temperature Anomalies (L4, MUR, GHRSST)"
+    };
+
+    fetch("https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/WMTSCapabilities.xml")
+      .then(response => response.text())
+      .then(str => (new window.DOMParser()).parseFromString(str, "text/xml"))
+      .then(data => {
+        const layers = data.querySelectorAll("Layer");
+        let output = "";
+
+        layers.forEach(layer => {
+          const identifier = layer.querySelector("ows\\:Identifier, Identifier");
+          const dimension = layer.querySelector("Dimension[name='Time']");
+          if (identifier && dimension && layerNames[identifier.textContent]) {
+            const defaultDate = dimension.getAttribute("default");
+            output += `<div class="layer-date"><strong>${layerNames[identifier.textContent]}</strong>: ${defaultDate}</div>`;
+          }
+        });
+
+        document.getElementById("results").innerHTML = output || "No matching layers found.";
+      })
+      .catch(err => {
+        console.error("Error fetching WMTS capabilities:", err);
+        document.getElementById("results").innerText = "Failed to load imagery dates.";
+      });
+  </script>
+</body>
+</html>
