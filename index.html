@@ -21,6 +21,7 @@
   <div id="results">Loading...</div>
 
   <script>
+    const WMS_NS = "http://www.opengis.net/wms";
     const layerNames = {
       "GHRSST_L4_MUR_Sea_Ice_Concentration": "Sea Ice Concentration (L4, MUR, GHRSST)",
       "GHRSST_L4_MUR_Sea_Surface_Temperature": "Sea Surface Temperature (L4, MUR Global Foundation, GHRSST)",
@@ -33,13 +34,13 @@
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(xmlText, "application/xml");
 
-        const allLayers = xmlDoc.getElementsByTagName("Layer");
+        const allLayers = xmlDoc.getElementsByTagNameNS(WMS_NS, "Layer");
         let output = "";
 
         for (let i = 0; i < allLayers.length; i++) {
           const layer = allLayers[i];
-          const nameEl = layer.getElementsByTagName("Name")[0];
-          const dimensionEls = layer.getElementsByTagName("Dimension");
+          const nameEl = layer.getElementsByTagNameNS(WMS_NS, "Name")[0];
+          const dimensionEls = layer.getElementsByTagNameNS(WMS_NS, "Dimension");
 
           if (nameEl && layerNames[nameEl.textContent]) {
             for (let j = 0; j < dimensionEls.length; j++) {
