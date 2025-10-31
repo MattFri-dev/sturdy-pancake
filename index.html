@@ -33,25 +33,22 @@
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(xmlText, "application/xml");
 
-        const nsResolver = function(prefix) {
-          const ns = {
-            "ows": "http://www.opengis.net/ows/1.1",
-            "wmts": "http://www.opengis.net/wmts/1.0"
-          };
-          return ns[prefix] || null;
-        };
-
-        const layers = xmlDoc.evaluate("//wmts:Layer", xmlDoc, nsResolver, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+        const layers = xmlDoc.getElementsByTagName("Layer");
         let output = "";
 
-        for (let i = 0; i < layers.snapshotLength; i++) {
-          const layer = layers.snapshotItem(i);
-          const identifier = xmlDoc.evaluate("ows:Identifier", layer, nsResolver, XPathResult.STRING_TYPE, null).stringValue;
-          const dimension = xmlDoc.evaluate("wmts:Dimension[@name='Time']", layer, nsResolver, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+        for (let i = 0; i < layers.length; i++) {
+          const layer = layers[i];
+          const identifier = layer.getElementsByTagNameNS("http://www.opengis.net/ows/1.1", "Identifier")[0];
+          const dimensions = layer.getElementsByTagName("Dimension");
 
-          if (layerNames[identifier] && dimension) {
-            const defaultDate = dimension.getAttribute("default");
-            output += `<div class="layer-date"><strong>${layerNames[identifier]}</strong>: ${defaultDate}</div>`;
+          if (identifier && layerNames[identifier.textContent]) {
+            for (let j = 0; j < dimensions.length; j++) {
+              const dim = dimensions[j];
+              if (dim.getAttribute("name") === "Time") {
+                const defaultDate = dim.getAttribute("default");
+                output += `<div class="layer-date"><strong>${layerNames[identifier.textContent]}</strong>: ${defaultDate}</div>`;
+              }
+            }
           }
         }
 
