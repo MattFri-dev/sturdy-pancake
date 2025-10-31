@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -38,15 +39,15 @@
 
         for (let i = 0; i < layers.length; i++) {
           const layer = layers[i];
-          const identifier = layer.getElementsByTagNameNS("http://www.opengis.net/ows/1.1", "Identifier")[0];
-          const dimensions = layer.getElementsByTagName("Dimension");
+          const identifierEl = layer.getElementsByTagName("Identifier")[0];
+          const dimensionEls = layer.getElementsByTagName("Dimension");
 
-          if (identifier && layerNames[identifier.textContent]) {
-            for (let j = 0; j < dimensions.length; j++) {
-              const dim = dimensions[j];
+          if (identifierEl && layerNames[identifierEl.textContent]) {
+            for (let j = 0; j < dimensionEls.length; j++) {
+              const dim = dimensionEls[j];
               if (dim.getAttribute("name") === "Time") {
                 const defaultDate = dim.getAttribute("default");
-                output += `<div class="layer-date"><strong>${layerNames[identifier.textContent]}</strong>: ${defaultDate}</div>`;
+                output += `<div class="layer-date"><strong>${layerNames[identifierEl.textContent]}</strong>: ${defaultDate}</div>`;
               }
             }
           }
