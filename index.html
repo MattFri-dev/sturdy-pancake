@@ -33,11 +33,11 @@
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(xmlText, "application/xml");
 
-        const layers = xmlDoc.getElementsByTagName("Layer");
+        const allLayers = xmlDoc.getElementsByTagName("Layer");
         let output = "";
 
-        for (let i = 0; i < layers.length; i++) {
-          const layer = layers[i];
+        for (let i = 0; i < allLayers.length; i++) {
+          const layer = allLayers[i];
           const nameEl = layer.getElementsByTagName("Name")[0];
           const dimensionEls = layer.getElementsByTagName("Dimension");
 
