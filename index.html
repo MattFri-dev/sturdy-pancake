@@ -28,31 +28,44 @@
       "GHRSST_L4_MUR_Sea_Surface_Temperature_Anomalies": "Sea Surface Temperature Anomalies (L4, MUR, GHRSST)"
     };
 
+    function findMatchingLayers(layerNodes) {
+      let output = "";
+
+      for (let i = 0; i < layerNodes.length; i++) {
+        const layer = layerNodes[i];
+        const nameEl = layer.getElementsByTagNameNS(WMS_NS, "Name")[0];
+        const dimensionEls = layer.getElementsByTagNameNS(WMS_NS, "Dimension");
+
+        if (nameEl && layerNames[nameEl.textContent]) {
+          for (let j = 0; j < dimensionEls.length; j++) {
+            const dim = dimensionEls[j];
+            if (dim.getAttribute("name") === "time") {
+              const defaultDate = dim.getAttribute("default");
+              output += `<div class="layer-date"><strong>${layerNames[nameEl.textContent]}</strong>: ${defaultDate}</div>`;
+            }
+          }
+        }
+
+        // Recursively search child layers
+        const childLayers = layer.getElementsByTagNameNS(WMS_NS, "Layer");
+        if (childLayers.length > 0) {
+          output += findMatchingLayers(childLayers);
+        }
+      }
+
+      return output;
+    }
+
     fetch("https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi?SERVICE=WMS&REQUEST=GetCapabilities")
       .then(response => response.text())
       .then(xmlText => {
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(xmlText, "application/xml");
 
-        const allLayers = xmlDoc.getElementsByTagNameNS(WMS_NS, "Layer");
-        let output = "";
+        const topLayer = xmlDoc.getElementsByTagNameNS(WMS_NS, "Layer")[0];
+        const nestedLayers = topLayer.getElementsByTagNameNS(WMS_NS, "Layer");
 
-        for (let i = 0; i < allLayers.length; i++) {
-          const layer = allLayers[i];
-          const nameEl = layer.getElementsByTagNameNS(WMS_NS, "Name")[0];
-          const dimensionEls = layer.getElementsByTagNameNS(WMS_NS, "Dimension");
-
-          if (nameEl && layerNames[nameEl.textContent]) {
-            for (let j = 0; j < dimensionEls.length; j++) {
-              const dim = dimensionEls[j];
-              if (dim.getAttribute("name") === "time") {
-                const defaultDate = dim.getAttribute("default");
-                output += `<div class="layer-date"><strong>${layerNames[nameEl.textContent]}</strong>: ${defaultDate}</div>`;
-              }
-            }
-          }
-        }
-
+        const output = findMatchingLayers(nestedLayers);
         document.getElementById("results").innerHTML = output || "No matching layers found.";
       })
       .catch(err => {
