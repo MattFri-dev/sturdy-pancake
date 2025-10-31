@@ -66,11 +66,13 @@
       for (let i = 0; i < layerNodes.length; i++) {
         const layer = layerNodes[i];
         const nameEl = layer.getElementsByTagNameNS(WMS_NS, "Name")[0];
-        const dimensionEls = layer.getElementsByTagNameNS(WMS_NS, "Dimension");
+        const childLayers = layer.getElementsByTagNameNS(WMS_NS, "Layer");
 
-        if (nameEl && layerInfo[nameEl.textContent] && !seenLayers.has(nameEl.textContent)) {
+        // Only process leaf layers with a Name and no children
+        if (nameEl && layerInfo[nameEl.textContent] && childLayers.length === 0 && !seenLayers.has(nameEl.textContent)) {
           seenLayers.add(nameEl.textContent);
 
+          const dimensionEls = layer.getElementsByTagNameNS(WMS_NS, "Dimension");
           for (let j = 0; j < dimensionEls.length; j++) {
             const dim = dimensionEls[j];
             if (dim.getAttribute("name") === "time") {
@@ -88,7 +90,7 @@
           }
         }
 
-        const childLayers = layer.getElementsByTagNameNS(WMS_NS, "Layer");
+        // Recursively search child layers
         if (childLayers.length > 0) {
           output += findMatchingLayers(childLayers);
         }
