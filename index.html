@@ -1,8 +1,7 @@
-
 <!DOCTYPE html>
 <html>
 <head>
-  <title>GIBS GHRSST Layer Dates</title>
+  <title>GIBS GHRSST WMS Layer Dates</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -18,17 +17,17 @@
   </style>
 </head>
 <body>
-  <h2>Latest Imagery Dates from GIBS (GHRSST Layers)</h2>
+  <h2>Latest Imagery Dates from GIBS WMS (GHRSST Layers)</h2>
   <div id="results">Loading...</div>
 
   <script>
     const layerNames = {
       "GHRSST_L4_MUR_Sea_Ice_Concentration": "Sea Ice Concentration (L4, MUR, GHRSST)",
       "GHRSST_L4_MUR_Sea_Surface_Temperature": "Sea Surface Temperature (L4, MUR Global Foundation, GHRSST)",
-      "GHRSST_L4_MUR_Sea_Surface_Temperature_Anomaly": "Sea Surface Temperature Anomalies (L4, MUR, GHRSST)"
+      "GHRSST_L4_MUR_Sea_Surface_Temperature_Anomalies": "Sea Surface Temperature Anomalies (L4, MUR, GHRSST)"
     };
 
-    fetch("https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/WMTSCapabilities.xml")
+    fetch("https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi?SERVICE=WMS&REQUEST=GetCapabilities")
       .then(response => response.text())
       .then(xmlText => {
         const parser = new DOMParser();
@@ -39,15 +38,15 @@
 
         for (let i = 0; i < layers.length; i++) {
           const layer = layers[i];
-          const identifierEl = layer.getElementsByTagName("Identifier")[0];
+          const nameEl = layer.getElementsByTagName("Name")[0];
           const dimensionEls = layer.getElementsByTagName("Dimension");
 
-          if (identifierEl && layerNames[identifierEl.textContent]) {
+          if (nameEl && layerNames[nameEl.textContent]) {
             for (let j = 0; j < dimensionEls.length; j++) {
               const dim = dimensionEls[j];
-              if (dim.getAttribute("name") === "Time") {
+              if (dim.getAttribute("name") === "time") {
                 const defaultDate = dim.getAttribute("default");
-                output += `<div class="layer-date"><strong>${layerNames[identifierEl.textContent]}</strong>: ${defaultDate}</div>`;
+                output += `<div class="layer-date"><strong>${layerNames[nameEl.textContent]}</strong>: ${defaultDate}</div>`;
               }
             }
           }
@@ -56,7 +55,7 @@
         document.getElementById("results").innerHTML = output || "No matching layers found.";
       })
       .catch(err => {
-        console.error("Error fetching WMTS capabilities:", err);
+        console.error("Error fetching WMS capabilities:", err);
         document.getElementById("results").innerText = "Failed to load imagery dates.";
       });
   </script>
