@@ -66,10 +66,14 @@
       for (let i = 0; i < layerNodes.length; i++) {
         const layer = layerNodes[i];
         const nameEl = layer.getElementsByTagNameNS(WMS_NS, "Name")[0];
-        const childLayers = layer.getElementsByTagNameNS(WMS_NS, "Layer");
 
-        // Only process leaf layers with a Name and no children
-        if (nameEl && layerInfo[nameEl.textContent] && childLayers.length === 0 && !seenLayers.has(nameEl.textContent)) {
+        // Check for direct child layers
+        const directChildLayers = Array.from(layer.childNodes).filter(
+          node => node.nodeType === 1 && node.localName === "Layer"
+        );
+
+        // Only process leaf layers with a Name and no direct children
+        if (nameEl && layerInfo[nameEl.textContent] && directChildLayers.length === 0 && !seenLayers.has(nameEl.textContent)) {
           seenLayers.add(nameEl.textContent);
 
           const dimensionEls = layer.getElementsByTagNameNS(WMS_NS, "Dimension");
@@ -82,7 +86,7 @@
                 <div class="layer-date">
                   <strong>${info.title}</strong>: ${defaultDate}
                   <div class="legend">
-                    <img src="${info.legend}" alt="Legend for ${info.title}">
+                    <img src="${info.legend}" alt="Legend for ${info.title}" />
                   </div>
                 </div>
               `;
@@ -90,9 +94,9 @@
           }
         }
 
-        // Recursively search child layers
-        if (childLayers.length > 0) {
-          output += findMatchingLayers(childLayers);
+        // Recursively search direct child layers
+        if (directChildLayers.length > 0) {
+          output += findMatchingLayers(directChildLayers);
         }
       }
 
@@ -106,7 +110,9 @@
         const xmlDoc = parser.parseFromString(xmlText, "application/xml");
 
         const topLayer = xmlDoc.getElementsByTagNameNS(WMS_NS, "Layer")[0];
-        const nestedLayers = topLayer.getElementsByTagNameNS(WMS_NS, "Layer");
+        const nestedLayers = Array.from(topLayer.childNodes).filter(
+          node => node.nodeType === 1 && node.localName === "Layer"
+        );
 
         const output = findMatchingLayers(nestedLayers);
         document.getElementById("results").innerHTML = output || "No matching layers found.";
