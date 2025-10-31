@@ -4,15 +4,36 @@
   <title>GIBS GHRSST WMS Layer Dates</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', Roboto, sans-serif;
       padding: 20px;
-      background-color: #f0f8ff;
+      background-color: rgba(240, 248, 255, 0.85); /* semi-transparent */
     }
     h2 {
       color: #003366;
+      font-weight: 600;
+      margin-bottom: 20px;
     }
     .layer-date {
-      margin-bottom: 10px;
+      background-color: #ffffffcc;
+      border-left: 5px solid #0077cc;
+      padding: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      border-radius: 6px;
+    }
+    .layer-date strong {
+      font-size: 18px;
+      color: #003366;
+    }
+    .legend {
+      margin-top: 10px;
+      text-align: center;
+    }
+    .legend img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
     }
   </style>
 </head>
@@ -22,11 +43,22 @@
 
   <script>
     const WMS_NS = "http://www.opengis.net/wms";
-    const layerNames = {
-      "GHRSST_L4_MUR_Sea_Ice_Concentration": "Sea Ice Concentration (L4, MUR, GHRSST)",
-      "GHRSST_L4_MUR_Sea_Surface_Temperature": "Sea Surface Temperature (L4, MUR Global Foundation, GHRSST)",
-      "GHRSST_L4_MUR_Sea_Surface_Temperature_Anomalies": "Sea Surface Temperature Anomalies (L4, MUR, GHRSST)"
+    const layerInfo = {
+      "GHRSST_L4_MUR_Sea_Ice_Concentration": {
+        title: "Sea Ice Concentration (L4, MUR, GHRSST)",
+        legend: "https://gibs.earthdata.nasa.gov/legends/GHRSST_Sea_Ice_Concentration_H.png"
+      },
+      "GHRSST_L4_MUR_Sea_Surface_Temperature": {
+        title: "Sea Surface Temperature (L4, MUR Global Foundation, GHRSST)",
+        legend: "https://gibs.earthdata.nasa.gov/legends/GHRSST_Sea_Surface_Temperature_H.png"
+      },
+      "GHRSST_L4_MUR_Sea_Surface_Temperature_Anomalies": {
+        title: "Sea Surface Temperature Anomalies (L4, MUR, GHRSST)",
+        legend: "https://gibs.earthdata.nasa.gov/legends/GHRSST_Sea_Surface_Temperature_Anomalies_H.png"
+      }
     };
+
+    const seenLayers = new Set();
 
     function findMatchingLayers(layerNodes) {
       let output = "";
@@ -36,17 +68,26 @@
         const nameEl = layer.getElementsByTagNameNS(WMS_NS, "Name")[0];
         const dimensionEls = layer.getElementsByTagNameNS(WMS_NS, "Dimension");
 
-        if (nameEl && layerNames[nameEl.textContent]) {
+        if (nameEl && layerInfo[nameEl.textContent] && !seenLayers.has(nameEl.textContent)) {
+          seenLayers.add(nameEl.textContent);
+
           for (let j = 0; j < dimensionEls.length; j++) {
             const dim = dimensionEls[j];
             if (dim.getAttribute("name") === "time") {
               const defaultDate = dim.getAttribute("default");
-              output += `<div class="layer-date"><strong>${layerNames[nameEl.textContent]}</strong>: ${defaultDate}</div>`;
+              const info = layerInfo[nameEl.textContent];
+              output += `
+                <div class="layer-date">
+                  <strong>${info.title}</strong>: ${defaultDate}
+                  <div class="legend">
+                    <img src="${info.legend}" alt="Legend for ${info.title}">
+                  </div>
+                </div>
+              `;
             }
           }
         }
 
-        // Recursively search child layers
         const childLayers = layer.getElementsByTagNameNS(WMS_NS, "Layer");
         if (childLayers.length > 0) {
           output += findMatchingLayers(childLayers);
